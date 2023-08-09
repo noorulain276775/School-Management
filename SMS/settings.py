@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'students',
+    'accounts',
     'phonenumber_field',
 ]
 
@@ -124,10 +124,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'students.CustomUser'
+AUTH_USER_MODEL = 'accounts.CustomUser'
 PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'  # Store phone numbers in international format
 PHONENUMBER_DEFAULT_REGION = 'AE'
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'django.contrib.auth.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend'
 ]

@@ -1,8 +1,8 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.core.validators import MinLengthValidator
 from phonenumber_field.modelfields import PhoneNumberField, validate_international_phonenumber
-from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth import get_user_model
 
 
 class CustomUserManager(BaseUserManager):
@@ -15,6 +15,10 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    def create_parent(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('user_type', 'parent')
+        return self.create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -29,8 +33,16 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser):
-    user_type = models.CharField(null=False, blank=False, max_length=20, choices=[(
-        'parent', 'Parent'), ('teacher', 'Teacher'), ('admin', 'Admin'), ('student', 'Student')])
+    USER_TYPE_CHOICES = [
+        ('admin', 'Admin'),
+        ('teacher', 'Teacher'),
+        ('parent', 'Parent'),
+        ('student', 'Student'),
+    ]
+
+    user_type = models.CharField(
+        null=False, blank=False, max_length=20, choices=USER_TYPE_CHOICES)
+    username = None
     first_name = models.TextField(
         null=False, blank=False, max_length=100, validators=[MinLengthValidator(2)])
     last_name = models.TextField(
@@ -43,6 +55,24 @@ class CustomUser(AbstractUser):
     email = models.EmailField(null=False, blank=False,
                               max_length=100, unique=True)
     objects = CustomUserManager()
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class Parent(models.Model):
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, primary_key=True)
+
+    def __str__(self):
+        return self.user.get_full_name()
+
+
+class Student(models.Model):
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
+    roll_number = models.CharField(max_length=10, unique=True)
+    image = models.ImageField(upload_to='student_images/', null=True, blank=True) 
+
+    def __str__(self):
+        return self.roll_number
