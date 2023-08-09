@@ -6,19 +6,21 @@ from django.contrib.auth import get_user_model
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email, password=None, user_type='student', **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")
 
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(email=email, user_type=user_type, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_parent(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('user_type', 'parent')
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, password, user_type='parent', **extra_fields)
+
+    def create_student(self, email, password=None, **extra_fields):
+        return self.create_user(email, password, user_type='student', **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -47,7 +49,7 @@ class CustomUser(AbstractUser):
         null=False, blank=False, max_length=100, validators=[MinLengthValidator(2)])
     last_name = models.TextField(
         null=False, blank=False, max_length=100, validators=[MinLengthValidator(2)])
-    phone = PhoneNumberField(null=False, blank=False, unique=True, validators=[
+    phone = PhoneNumberField(null=False, blank=False, validators=[
                              validate_international_phonenumber])
     address = models.TextField(null=False, blank=False,
                                max_length=256, validators=[MinLengthValidator(9)])
@@ -70,9 +72,10 @@ class Parent(models.Model):
 
 
 class Student(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
     roll_number = models.CharField(max_length=10, unique=True)
-    image = models.ImageField(upload_to='student_images/', null=True, blank=True) 
+    image = models.ImageField(upload_to='student_images/', null=True, blank=True)
 
     def __str__(self):
         return self.roll_number
