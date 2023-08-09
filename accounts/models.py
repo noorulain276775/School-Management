@@ -65,17 +65,66 @@ class CustomUser(AbstractUser):
 
 
 class Parent(models.Model):
-    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField(
+        get_user_model(), on_delete=models.CASCADE, primary_key=True)
+    image = models.ImageField(
+        upload_to='parent_images/', null=True, blank=True)
 
     def __str__(self):
         return self.user.get_full_name()
 
 
+class Subject(models.Model):
+    subject_name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.subject_name
+
+
+class Teacher(models.Model):
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+    ]
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, primary_key=True)
+    subjects_taught = models.ManyToManyField(Subject, related_name='teachers')
+    image = models.ImageField(
+        upload_to='teacher_images/', null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(
+        max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
+
+    def __str__(self):
+        return self.user.get_full_name()
+
+
+class Class(models.Model):
+    class_name = models.CharField(max_length=10)
+    grade_level = models.CharField(max_length=10)
+    homeroom_teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE)
+    subjects = models.ManyToManyField(Subject, related_name='classes')
+
+    def __str__(self):
+        return self.class_name
+
+
 class Student(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+    ]
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, primary_key=True)
     parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
     roll_number = models.CharField(max_length=10, unique=True)
-    image = models.ImageField(upload_to='student_images/', null=True, blank=True)
+    image = models.ImageField(
+        upload_to='student_images/', null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(
+        max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
+    student_class = models.ForeignKey(
+        Class, on_delete=models.CASCADE, null=False, blank=False)
 
     def __str__(self):
         return self.roll_number
